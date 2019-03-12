@@ -53,7 +53,7 @@ namespace Helloworld
 
             Server server = new Server();
             server.Register(typeof(IArith), new Arith());
-            await Task.Factory.StartNew(async () =>
+            _ = Task.Run(async () =>
             {
                 try
                 {
@@ -63,7 +63,7 @@ namespace Helloworld
                 {
                     Console.WriteLine("RPC Server exit with exception {0}", e.ToString());
                 }
-            }, TaskCreationOptions.LongRunning);
+            });
 
             Client client = new Client();
             client.Register(typeof(IArith));
@@ -86,5 +86,4 @@ namespace Helloworld
         }
     }
 }
-
 ```
