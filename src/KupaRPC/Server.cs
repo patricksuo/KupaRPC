@@ -6,7 +6,7 @@ namespace KupaRPC
 {
     public class Server
     {
-        public void Register(ushort serviceID, Type serviceInterface, object service)
+        public void Register(Type serviceInterface, object service)
         {
             throw new NotImplementedException();
         }

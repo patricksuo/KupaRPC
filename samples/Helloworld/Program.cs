@@ -11,6 +11,7 @@ namespace Helloworld
         public int B;
     }
 
+    [Service(1024)]
     public interface IArith
     {
         [Method(1)]
@@ -44,7 +45,7 @@ namespace Helloworld
             int port = 8080;
 
             Server server = new Server();
-            server.Register(1024, typeof(IArith), new Arith());
+            server.Register(typeof(IArith), new Arith());
             await Task.Factory.StartNew(async () =>
             {
                 try
@@ -58,7 +59,7 @@ namespace Helloworld
             }, TaskCreationOptions.LongRunning);
 
             Client client = new Client();
-            client.Register(1024, typeof(IArith));
+            client.Register(typeof(IArith));
             await client.ConnectAsync(host, port);
 
             IArith service = client.Get<IArith>();

@@ -7,7 +7,7 @@ namespace KupaRPC
 {
     public class Client
     {
-        public void Register(ushort serviceID , Type serviceInterface)
+        public void Register(Type serviceInterface)
         {
             throw new NotImplementedException();
         }
