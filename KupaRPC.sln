@@ -5,11 +5,15 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BDE8A272-3529-4444-BD04-314046F617BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KupaRPC", "src\KupaRPC\KupaRPC.csproj", "{12D4FCEA-091E-43CE-941E-1A4988E40D60}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KupaRPC", "src\KupaRPC\KupaRPC.csproj", "{12D4FCEA-091E-43CE-941E-1A4988E40D60}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{C156BF6A-84F9-4724-88D3-B96C965D0A39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helloworld", "samples\Helloworld\Helloworld.csproj", "{B19B279F-1276-4E0B-BA0B-DC315D633450}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Helloworld", "samples\Helloworld\Helloworld.csproj", "{B19B279F-1276-4E0B-BA0B-DC315D633450}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KupaRPC.Tests", "tests\KupaRPC.Tests\KupaRPC.Tests.csproj", "{64C1AAA9-7E98-468F-80AE-78BBAF822501}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{151C4DAB-FF5E-48A8-BB96-52D5A5DBA142}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,9 +23,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{12D4FCEA-091E-43CE-941E-1A4988E40D60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -48,9 +49,28 @@ Global
 		{B19B279F-1276-4E0B-BA0B-DC315D633450}.Release|x64.Build.0 = Release|Any CPU
 		{B19B279F-1276-4E0B-BA0B-DC315D633450}.Release|x86.ActiveCfg = Release|Any CPU
 		{B19B279F-1276-4E0B-BA0B-DC315D633450}.Release|x86.Build.0 = Release|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Debug|x64.Build.0 = Debug|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Debug|x86.Build.0 = Debug|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Release|x64.ActiveCfg = Release|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Release|x64.Build.0 = Release|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Release|x86.ActiveCfg = Release|Any CPU
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{12D4FCEA-091E-43CE-941E-1A4988E40D60} = {BDE8A272-3529-4444-BD04-314046F617BB}
 		{B19B279F-1276-4E0B-BA0B-DC315D633450} = {C156BF6A-84F9-4724-88D3-B96C965D0A39}
+		{64C1AAA9-7E98-468F-80AE-78BBAF822501} = {151C4DAB-FF5E-48A8-BB96-52D5A5DBA142}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F772D440-F6C0-486B-A126-15EE8B41F7D1}
 	EndGlobalSection
 EndGlobal

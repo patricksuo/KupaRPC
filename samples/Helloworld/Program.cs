@@ -74,7 +74,6 @@ namespace Helloworld
 
             int result2 = await service.Multiply2(arg);
             Console.WriteLine($"{arg.A} * {arg.B} = {result2}");
-
             await client.StopAsync();
         }
     }
