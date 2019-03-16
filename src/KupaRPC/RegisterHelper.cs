@@ -28,30 +28,16 @@ namespace KupaRPC
     {
         public ushort ID;
         public string Name;
-        public ParameterInfo[] Parameters;
-        public bool ReturnValueTask;
+        public MethodInfo MethodInfo;
+        public ParameterInfo Parameter;
         public Type ReturnType;
-
     }
 
     internal class RegisterHelper
     {
-        private ServerDefine _serverDefine = new ServerDefine();
-        private readonly object _sync = new object();
-        private bool _isFinished = false;
+        public ServerDefine ServerDefine { get; } = new ServerDefine();
 
-        internal void AddService(Type serviceType)
-        {
-            lock (_sync)
-            {
-                if (_isFinished)
-                {
-                    throw new Exception("can not add more service");
-                }
-                AddServiceNoLock(serviceType);
-            }
-        }
-        private void AddServiceNoLock(Type serviceType)
+        public ServiceDefine AddService(Type serviceType)
         {
             ServiceDefine service = new ServiceDefine()
             {
@@ -77,12 +63,16 @@ namespace KupaRPC
 
             service.ID = attribute.ServiceID;
 
-            if (_serverDefine.Services.TryGetValue(service.ID, out ServiceDefine conflictedService))
+            if (ServerDefine.Services.TryGetValue(service.ID, out ServiceDefine conflictedService))
             {
                 throw new ArgumentException($"{serviceType.ToString()} has conflicted ID({service.ID}) with {conflictedService.Type.ToString()}");
             }
 
             CollectMethods(service);
+
+            ServerDefine.Services.Add(service.ID, service);
+
+            return service;
         }
 
         private void CollectMethods(ServiceDefine service)
@@ -109,37 +99,39 @@ namespace KupaRPC
                 }
 
                 ParameterInfo[] parameters = mi.GetParameters();
-                foreach (ParameterInfo pi in parameters)
+                if (parameters.Length != 2)
                 {
-                    if (pi.IsIn || pi.IsOut || pi.IsRetval)
-                    {
-                        throw new ArgumentException($"in {service.Type.Name} method {mi.Name} parameter modifier is not supported");
-                    }
+                    throw new ArgumentException($"in {service.Type.Name} method {mi.Name} illegal parameter num");
                 }
 
-                // return type should be one of Task/ValueTask/Task<>/ValueTask<>
-                if (!mi.ReturnType.IsSubclassOf(typeof(Task)) &&
-                    !typeof(ValueTask).IsAssignableFrom(mi.ReturnType) &&
-                    (mi.ReturnType.IsGenericType && mi.ReturnType.GetGenericTypeDefinition() != typeof(ValueTask<>)))
+                ParameterInfo pi = parameters[0];
+                if (pi.IsIn || pi.IsOut || pi.IsRetval)
+                {
+                    throw new ArgumentException($"in {service.Type.Name} method {mi.Name} parameter modifier is not supported");
+                }
 
+                ParameterInfo ctxPi = parameters[1];
+                if (ctxPi.IsIn || ctxPi.IsOut || ctxPi.IsRetval || ctxPi.ParameterType != typeof(IContext))
+                {
+                    throw new ArgumentException($"in {service.Type.Name} method {mi.Name} illegal context parameter");
+                }
+
+                if (!mi.ReturnType.IsGenericType ||
+                mi.ReturnType.GetGenericTypeDefinition() != typeof(Task<>) ||
+                mi.ReturnType.GetGenericArguments().Length != 1)
                 {
                     throw new ArgumentException($"in {service.Type.Name} method {mi.Name} has illegal return type {mi.ReturnType}");
                 }
 
-                bool returnValueTask = !mi.ReturnType.IsSubclassOf(typeof(Task));
+                Type returnType = mi.ReturnType.GetGenericArguments()[0];
 
-                Type returnType = null;
-                if (mi.ReturnType.IsGenericType)
-                {
-                    returnType = mi.ReturnType.GetGenericArguments()[0];
-                }
 
                 MethodDefine methodDefine = new MethodDefine()
                 {
                     ID = methodID,
                     Name = mi.Name,
-                    ReturnValueTask = returnValueTask,
-                    Parameters = parameters,
+                    MethodInfo = mi,
+                    Parameter = pi,
                     ReturnType = returnType,
                 };
                 service.Methods.Add(methodID, methodDefine);
@@ -150,21 +142,5 @@ namespace KupaRPC
                 throw new ArgumentException($"{service.Type.Name} does not have any method");
             }
         }
-
-
-        internal void Finish()
-        {
-            lock (_sync)
-            {
-                if (_isFinished)
-                {
-                    return;
-                }
-                _isFinished = true;
-
-                // TODO
-            }
-        }
-
     }
 }
