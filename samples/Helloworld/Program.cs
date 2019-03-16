@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using KupaRPC;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Helloworld
 {
@@ -15,24 +17,24 @@ namespace Helloworld
     public interface IArith
     {
         [Method(1)]
-        Task<int> Multiply(Args args);
+        Task<int> Multiply(Args args, IContext context = null);
 
         [Method(2)]
-        ValueTask<int> Multiply2(Args args);
+        Task<int> Add(Args args, IContext context = null);
     }
 
 
 
     public class Arith : IArith
     {
-        public Task<int> Multiply(Args args)
+        public Task<int> Multiply(Args args, IContext context = null)
         {
             return Task.FromResult(args.A * args.B);
         }
 
-        public ValueTask<int> Multiply2(Args args)
+        public Task<int> Add(Args args, IContext context = null)
         {
-            return new ValueTask<int>(args.A * args.B);
+            return Task.FromResult(args.A + args.B);
         }
     }
 
@@ -44,8 +46,9 @@ namespace Helloworld
             string host = "127.0.0.1";
             int port = 8080;
 
+
             Server server = new Server();
-            server.Register(typeof(IArith), new Arith());
+            server.Register<IArith>(new Arith());
             _ = Task.Run(async () =>
             {
                 try
@@ -58,9 +61,10 @@ namespace Helloworld
                 }
             });
 
-            Client client = new Client();
-            client.Register(typeof(IArith));
-            await client.ConnectAsync(host, port);
+            ClientFactory clientFactory = new ClientFactory();
+            clientFactory.Register(typeof(IArith));
+            clientFactory.Finish();
+            Client client = await clientFactory.ConnectAsync(host, port);
 
             IArith service = client.Get<IArith>();
 
@@ -72,8 +76,8 @@ namespace Helloworld
             int result = await service.Multiply(arg);
             Console.WriteLine($"{arg.A} * {arg.B} = {result}");
 
-            int result2 = await service.Multiply2(arg);
-            Console.WriteLine($"{arg.A} * {arg.B} = {result2}");
+            int result2 = await service.Add(arg);
+            Console.WriteLine($"{arg.A} + {arg.B} = {result2}");
             await client.StopAsync();
         }
     }
