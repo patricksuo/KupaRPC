@@ -1,3 +1,5 @@
+https://dev.azure.com/sillyousu/kuparpc/_apis/build/status/1?api-version=5.1-preview.1
+
 ### KupaRPC
 easy-to-use RPC for [.Net Core](http://github.com/dotnet/). Inspired by  [net/rpc](https://golang.org/pkg/net/rpc/)
 
