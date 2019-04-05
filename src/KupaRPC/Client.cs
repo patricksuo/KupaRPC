@@ -116,7 +116,7 @@ namespace KupaRPC
 
                     if (!_codec.TryReadReponseHead(in buffer, ref bodySize, ref requestID, ref errorCode))
                     {
-                        input.AdvanceTo(buffer.Start);
+                        input.AdvanceTo(buffer.Start, buffer.End);
                         continue;
                     }
 
