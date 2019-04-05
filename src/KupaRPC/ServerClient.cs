@@ -11,8 +11,8 @@ namespace KupaRPC
     {
         private readonly Server _server;
         private readonly IDuplexPipe _transport;
-        private PipeReader _input;
-        private PipeWriter _output;
+        private readonly PipeReader _input;
+        private readonly PipeWriter _output;
         private readonly Codec _codec;
         private readonly SemaphoreSlim _sendMutex = new SemaphoreSlim(1);
         private readonly ILogger _logger;
@@ -47,7 +47,7 @@ namespace KupaRPC
                     ReadOnlySequence<byte> buffer = result.Buffer;
                     if (!_codec.TryReadRequest(in buffer, ref reqHead))
                     {
-                        _input.AdvanceTo(buffer.Start);
+                        _input.AdvanceTo(buffer.Start, buffer.End);
                         continue;
                     }
 
@@ -110,7 +110,7 @@ namespace KupaRPC
 
         private async Task ServeOneRequest(Handler handler, long requestID, object arg)
         {
-            object reply = null;
+            object reply;
             try
             {
                 reply = await handler.Process(arg, ServerContext.Default);

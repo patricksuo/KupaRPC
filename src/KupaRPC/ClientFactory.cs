@@ -15,7 +15,7 @@ namespace KupaRPC
 
         private readonly object _syncObj = new object();
         private bool _finish = false;
-        private RegisterHelper _registerHelper = new RegisterHelper();
+        private readonly RegisterHelper _registerHelper = new RegisterHelper();
         private Dictionary<Type, Func<Client, object>> _serviceClientFactories = null;
 
 
