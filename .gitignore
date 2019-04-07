@@ -35,3 +35,6 @@ msbuild.wrn
 
 # Visual Studio 2015
 .vs/
+
+# test artefact
+tests/KupaRPC.Tests/coveragereport/
