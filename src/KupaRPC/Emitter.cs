@@ -40,6 +40,7 @@ namespace KupaRPC
             LambdaExpression newLambda = Expression.Lambda(newExpr, nameParamExpr, delegateParamExpr);
 
             string code = newLambda.ToString();
+            _ = code;
 
             return (Handler)newLambda.Compile().DynamicInvoke(methodName, methodCallDelegate);
         }
