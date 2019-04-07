@@ -120,7 +120,7 @@ namespace KupaRPC
                         continue;
                     }
 
-                    ReadOnlySequence<byte> body = buffer.Slice(Codec.ReponseHeadSize, bodySize);
+                    ReadOnlySequence<byte> body = buffer.Slice(Protocol.ReponseHeadSize, bodySize);
 
                     if (!_pendingRequests.TryRemove(requestID, out IPendingRequest request))
                     {

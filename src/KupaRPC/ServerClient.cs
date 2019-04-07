@@ -51,13 +51,13 @@ namespace KupaRPC
                         continue;
                     }
 
-                    if (buffer.Length < Codec.RequestHeadSize + reqHead.PayloadSize)
+                    if (buffer.Length < Protocol.RequestHeadSize + reqHead.PayloadSize)
                     {
                         _input.AdvanceTo(buffer.Start, buffer.End);
                         continue;
                     }
 
-                    ReadOnlySequence<byte> body = buffer.Slice(Codec.RequestHeadSize, reqHead.PayloadSize);
+                    ReadOnlySequence<byte> body = buffer.Slice(Protocol.RequestHeadSize, reqHead.PayloadSize);
                     if (!_server.TryGetHandler(reqHead.ServiceID, reqHead.MethodID, out Handler handler))
                     {
                         _input.AdvanceTo(body.End);
