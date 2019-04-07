@@ -13,7 +13,7 @@ namespace KupaRPC.Tests
         private readonly Codec _codec = new Codec(new Ceras.CerasSerializer());
 
         [Fact]
-        public void TryReadRequestTest()
+        public void TryReadRequestHeadTest()
         {
             Request<string, string> request = new Request<string, string>
             {
@@ -58,12 +58,12 @@ namespace KupaRPC.Tests
                 {
                     Assert.ThrowsAny<CodecException>(() =>
                     {
-                        _codec.TryReadRequest(sequence, ref head);
+                        _codec.TryReadRequestHead(sequence, ref head);
                     });
                 }
                 else
                 {
-                    bool ok = _codec.TryReadRequest(sequence, ref head);
+                    bool ok = _codec.TryReadRequestHead(sequence, ref head);
 
                     Assert.Equal(tc.OK, ok);
                     if (ok)
@@ -148,7 +148,7 @@ namespace KupaRPC.Tests
 
             RequestHead head = new RequestHead();
 
-            Assert.True(_codec.TryReadRequest(packet, ref head));
+            Assert.True(_codec.TryReadRequestHead(packet, ref head));
             Assert.Equal(request.ID, head.RequestID);
             Assert.Equal(request.ServiceID, head.ServiceID);
             Assert.Equal(request.MethodID, head.MethodID);

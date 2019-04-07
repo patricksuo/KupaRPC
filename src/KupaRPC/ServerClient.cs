@@ -45,7 +45,13 @@ namespace KupaRPC
                         return;
                     }
                     ReadOnlySequence<byte> buffer = result.Buffer;
-                    if (!_codec.TryReadRequest(in buffer, ref reqHead))
+                    if (!_codec.TryReadRequestHead(in buffer, ref reqHead))
+                    {
+                        _input.AdvanceTo(buffer.Start, buffer.End);
+                        continue;
+                    }
+
+                    if (buffer.Length < Codec.RequestHeadSize + reqHead.PayloadSize)
                     {
                         _input.AdvanceTo(buffer.Start, buffer.End);
                         continue;
