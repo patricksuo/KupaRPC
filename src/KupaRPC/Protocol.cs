@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Ceras;
 
 namespace KupaRPC
 {
@@ -38,5 +39,40 @@ namespace KupaRPC
         public const int MaxPayloadSize = 128 * 1024 * 1024; // 128 MB
 
         public abstract Codec NewCodec();
+    }
+
+    public class CerasProtocol : Protocol
+    {
+        private readonly IEnumerable<ServiceDefine> _serviceDefines;
+
+        internal CerasProtocol(IEnumerable<ServiceDefine> serviceDefines)
+        {
+            _serviceDefines = serviceDefines;
+        }
+
+        public override Codec NewCodec()
+        {
+            SerializerConfig config = new SerializerConfig();
+            foreach (ServiceDefine service in _serviceDefines)
+            {
+                foreach (MethodDefine method in service.Methods.Values)
+                {
+                    if (!config.KnownTypes.Contains(method.Parameter.ParameterType))
+                    {
+                        config.KnownTypes.Add(method.Parameter.ParameterType);
+                    }
+                    if (!config.KnownTypes.Contains(method.ReturnType))
+                    {
+                        config.KnownTypes.Add(method.ReturnType);
+                    }
+                }
+            }
+
+            CerasSerializer serializer = new CerasSerializer(config);
+            Codec codec = new Codec(serializer);
+            return codec;
+        }
+
+
     }
 }
