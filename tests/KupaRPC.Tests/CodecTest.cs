@@ -29,20 +29,20 @@ namespace KupaRPC.Tests
                 RequestID = request.ID,
                 ServiceID = request.ServiceID,
                 MethodID = request.MethodID,
-                PayloadSize = tmpBuffer.Length - Codec.RequestHeadSize,
+                PayloadSize = tmpBuffer.Length - Protocol.RequestHeadSize,
             };
 
             byte[] invalidBuffer1 = tmpBuffer.ToArray();
             BinaryPrimitives.WriteInt32LittleEndian(invalidBuffer1, -1);
 
             byte[] invalidBuffer2 = tmpBuffer.ToArray();
-            BinaryPrimitives.WriteInt32LittleEndian(invalidBuffer2, Codec.MaxPayloadSize + 1);
+            BinaryPrimitives.WriteInt32LittleEndian(invalidBuffer2, Protocol.MaxPayloadSize + 1);
 
 
             var testCases = new[]{
                 new { Input = tmpBuffer.Slice(0,1).ToArray(), OK = false, Head = new RequestHead() , Exception = false},
-                new { Input = tmpBuffer.Slice(0,Codec.RequestHeadSize-1).ToArray(), OK = false, Head = new RequestHead() ,Exception = false},
-                new { Input = tmpBuffer.Slice(0, Codec.RequestHeadSize).ToArray(), OK = true, Head =expectedHead, Exception = false},
+                new { Input = tmpBuffer.Slice(0, Protocol.RequestHeadSize-1).ToArray(), OK = false, Head = new RequestHead() ,Exception = false},
+                new { Input = tmpBuffer.Slice(0, Protocol.RequestHeadSize).ToArray(), OK = true, Head =expectedHead, Exception = false},
                 new { Input = tmpBuffer.ToArray(), OK = true, Head =expectedHead, Exception = false},
                 new { Input = invalidBuffer1, OK = false, Head =new RequestHead(), Exception = true},
                 new { Input = invalidBuffer2, OK = false, Head =new RequestHead(), Exception = true},
@@ -91,15 +91,15 @@ namespace KupaRPC.Tests
             BinaryPrimitives.WriteInt32LittleEndian(invalidBuffer1, -1);
 
             byte[] invalidBuffer2 = tmpBuffer.ToArray();
-            BinaryPrimitives.WriteInt32LittleEndian(invalidBuffer2, Codec.MaxPayloadSize + 1);
+            BinaryPrimitives.WriteInt32LittleEndian(invalidBuffer2, Protocol.MaxPayloadSize + 1);
 
 
 
             var testCases = new[]
             {
                 new {Input = tmpBuffer.Slice(0,1).ToArray(), OK = false, Head = new ReponseHead(), Exception = false },
-                new {Input = tmpBuffer.Slice(0,Codec.ReponseHeadSize-1).ToArray(), OK = false, Head = new ReponseHead(), Exception = false },
-                new {Input = tmpBuffer.Slice(0,Codec.ReponseHeadSize).ToArray(), OK = true, Head = reponseHead, Exception = false },
+                new {Input = tmpBuffer.Slice(0,Protocol.ReponseHeadSize-1).ToArray(), OK = false, Head = new ReponseHead(), Exception = false },
+                new {Input = tmpBuffer.Slice(0,Protocol.ReponseHeadSize).ToArray(), OK = true, Head = reponseHead, Exception = false },
                 new {Input = invalidBuffer1, OK = false, Head =  new ReponseHead(), Exception = true },
                 new {Input = invalidBuffer2, OK = false, Head =  new ReponseHead(), Exception = true },
             };
@@ -152,9 +152,9 @@ namespace KupaRPC.Tests
             Assert.Equal(request.ID, head.RequestID);
             Assert.Equal(request.ServiceID, head.ServiceID);
             Assert.Equal(request.MethodID, head.MethodID);
-            Assert.Equal(packet.Length - Codec.RequestHeadSize, head.PayloadSize);
+            Assert.Equal(packet.Length - Protocol.RequestHeadSize, head.PayloadSize);
 
-            string body = _codec.ReadBody<string>(packet.Slice(Codec.RequestHeadSize, head.PayloadSize));
+            string body = _codec.ReadBody<string>(packet.Slice(Protocol.RequestHeadSize, head.PayloadSize));
 
             Assert.Equal(request.Arg, body);
         }
@@ -173,11 +173,11 @@ namespace KupaRPC.Tests
             Assert.True(_codec.TryReadReponseHead(packet, ref head.PayloadSize, ref head.RequestID, ref errorCode));
             head.ErrorCode = (ErrorCode)errorCode;
 
-            Assert.Equal(packet.Length - Codec.ReponseHeadSize, head.PayloadSize);
+            Assert.Equal(packet.Length - Protocol.ReponseHeadSize, head.PayloadSize);
             Assert.Equal(requestID, head.RequestID);
             Assert.Equal(ErrorCode.OK, head.ErrorCode);
 
-            string body = _codec.ReadBody<string>(packet.Slice(Codec.ReponseHeadSize, head.PayloadSize));
+            string body = _codec.ReadBody<string>(packet.Slice(Protocol.ReponseHeadSize, head.PayloadSize));
             Assert.Equal(reponsePayload, body);
         }
     }
