@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Ceras;
@@ -150,17 +151,22 @@ namespace KupaRPC
             tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, RequestHeadSize + size);
         }
 
-        public void WriteReponseHead(in ReponseHead head, out ReadOnlyMemory<byte> tmpBuffer)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteReponseHead(int payloadSize, long requestID, ErrorCode errorCode)
         {
             Span<byte> span = _writeBuffer;
-            BinaryPrimitives.WriteInt32LittleEndian(span, 0);
+            BinaryPrimitives.WriteInt32LittleEndian(span, payloadSize);
             span = span.Slice(sizeof(int));
 
-            BinaryPrimitives.WriteInt64LittleEndian(span, head.RequestID);
+            BinaryPrimitives.WriteInt64LittleEndian(span, requestID);
             span = span.Slice(sizeof(long));
 
-            BinaryPrimitives.WriteInt32LittleEndian(span, (int)head.ErrorCode);
+            BinaryPrimitives.WriteInt32LittleEndian(span, (int)errorCode);
+        }
 
+        public void WriteReponseHead(in ReponseHead head, out ReadOnlyMemory<byte> tmpBuffer)
+        {
+            WriteReponseHead(head.PayloadSize, head.RequestID, head.ErrorCode);
             tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, ReponseHeadSize);
         }
 
@@ -173,14 +179,7 @@ namespace KupaRPC
                 ThrowHelper.ThrowInvalidBodySizeException();
             }
 
-            Span<byte> span = _writeBuffer;
-            BinaryPrimitives.WriteInt32LittleEndian(span, size);
-            span = span.Slice(sizeof(int));
-
-            BinaryPrimitives.WriteInt64LittleEndian(span, requestID);
-            span = span.Slice(sizeof(long));
-
-            BinaryPrimitives.WriteInt32LittleEndian(span, (int)ErrorCode.OK);
+            WriteReponseHead(size, requestID, ErrorCode.OK);
 
             tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, size + ReponseHeadSize);
         }
