@@ -19,6 +19,7 @@ namespace KupaRPC
         private readonly TaskCompletionSource<bool> _serveComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly RegisterHelper _registerHelper = new RegisterHelper();
         private readonly Dictionary<uint, Handler> _handlers = new Dictionary<uint, Handler>();
+        private Protocol _protocol;
 
         public Server(ILoggerFactory loggerFactory = null)
         {
@@ -45,6 +46,8 @@ namespace KupaRPC
 
         public async Task ServeAsync(string host, int port)
         {
+            _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
+
             IPAddress[] addresses = await Dns.GetHostAddressesAsync(host);
             foreach (IPAddress address in addresses)
             {
@@ -59,7 +62,7 @@ namespace KupaRPC
         protected override Task OnClientConnectedAsync(in ClientConnection client)
         {
             ILogger logger = _loggerFactory.CreateLogger($"KupaRPC|{client.RemoteEndPoint.ToString()}");
-            ServerClient serverClient = new ServerClient(_cancellation.Token, logger, this, client.Transport, Codec.New(_registerHelper.ServerDefine.Services.Values));
+            ServerClient serverClient = new ServerClient(_cancellation.Token, logger, this, client.Transport, _protocol.NewCodec());
             return serverClient.Serve();
         }
 

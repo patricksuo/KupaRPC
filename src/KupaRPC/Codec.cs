@@ -18,28 +18,6 @@ namespace KupaRPC
             _serializer = serializer;
         }
 
-        internal static Codec New(IEnumerable<ServiceDefine> serviceDefines)
-        {
-            SerializerConfig config = new SerializerConfig();
-            foreach (ServiceDefine service in serviceDefines)
-            {
-                foreach (MethodDefine method in service.Methods.Values)
-                {
-                    if (!config.KnownTypes.Contains(method.Parameter.ParameterType))
-                    {
-                        config.KnownTypes.Add(method.Parameter.ParameterType);
-                    }
-                    if (!config.KnownTypes.Contains(method.ReturnType))
-                    {
-                        config.KnownTypes.Add(method.ReturnType);
-                    }
-                }
-            }
-
-            Ceras.CerasSerializer serializer = new Ceras.CerasSerializer(config);
-            Codec codec = new Codec(serializer);
-            return codec;
-        }
 
         private byte[] _readBuffer = new byte[Protocol.RequestHeadSize];
         private byte[] _writeBuffer = new byte[Protocol.RequestHeadSize + 128];

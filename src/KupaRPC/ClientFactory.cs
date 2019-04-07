@@ -17,6 +17,7 @@ namespace KupaRPC
         private bool _finish = false;
         private readonly RegisterHelper _registerHelper = new RegisterHelper();
         private Dictionary<Type, Func<Client, object>> _serviceClientFactories = null;
+        private Protocol _protocol = null;
 
 
         public ClientFactory Register(Type serviceInterface)
@@ -54,6 +55,7 @@ namespace KupaRPC
                 _finish = true;
 
                 _serviceClientFactories = Emitter.EmitServiceClients<Client>(_registerHelper.ServerDefine);
+                _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
 
             }
             return this;
@@ -74,7 +76,7 @@ namespace KupaRPC
             {
                 IPEndPoint endpoint = new IPEndPoint(address, port);
                 SocketConnection conn = await SocketConnection.ConnectAsync(endpoint);
-                return new Client(this, _loggerFactory, conn, Codec.New(_registerHelper.ServerDefine.Services.Values));
+                return new Client(this, _loggerFactory, conn, _protocol.NewCodec());
             }
 
             throw new Exception($"GetHostAddress failed: {host}");
