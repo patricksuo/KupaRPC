@@ -59,29 +59,6 @@ namespace KupaRPC
             return this;
         }
 
-        private Codec NewCodec()
-        {
-            Ceras.SerializerConfig config = new Ceras.SerializerConfig();
-            foreach (ServiceDefine service in _registerHelper.ServerDefine.Services.Values)
-            {
-                foreach (MethodDefine method in service.Methods.Values)
-                {
-                    if (!config.KnownTypes.Contains(method.Parameter.ParameterType))
-                    {
-                        config.KnownTypes.Add(method.Parameter.ParameterType);
-                    }
-                    if (!config.KnownTypes.Contains(method.ReturnType))
-                    {
-                        config.KnownTypes.Add(method.ReturnType);
-                    }
-                }
-            }
-
-            Ceras.CerasSerializer serializer = new Ceras.CerasSerializer(config);
-            Codec codec = new Codec(serializer);
-            return codec;
-        }
-
         public async Task<Client> ConnectAsync(string host, int port)
         {
             lock (_syncObj)
@@ -97,7 +74,7 @@ namespace KupaRPC
             {
                 IPEndPoint endpoint = new IPEndPoint(address, port);
                 SocketConnection conn = await SocketConnection.ConnectAsync(endpoint);
-                return new Client(this, _loggerFactory, conn, NewCodec());
+                return new Client(this, _loggerFactory, conn, Codec.New(_registerHelper.ServerDefine.Services.Values));
             }
 
             throw new Exception($"GetHostAddress failed: {host}");

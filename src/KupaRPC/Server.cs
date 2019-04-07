@@ -43,8 +43,6 @@ namespace KupaRPC
             }
         }
 
-
-
         public async Task ServeAsync(string host, int port)
         {
             IPAddress[] addresses = await Dns.GetHostAddressesAsync(host);
@@ -61,32 +59,8 @@ namespace KupaRPC
         protected override Task OnClientConnectedAsync(in ClientConnection client)
         {
             ILogger logger = _loggerFactory.CreateLogger($"KupaRPC|{client.RemoteEndPoint.ToString()}");
-            ServerClient serverClient = new ServerClient(_cancellation.Token, logger, this, client.Transport, NewCodec());
+            ServerClient serverClient = new ServerClient(_cancellation.Token, logger, this, client.Transport, Codec.New(_registerHelper.ServerDefine.Services.Values));
             return serverClient.Serve();
-        }
-
-        // TODO fix duplicated NewCodec logic
-        private Codec NewCodec()
-        {
-            Ceras.SerializerConfig config = new Ceras.SerializerConfig();
-            foreach (ServiceDefine service in _registerHelper.ServerDefine.Services.Values)
-            {
-                foreach (MethodDefine method in service.Methods.Values)
-                {
-                    if (!config.KnownTypes.Contains(method.Parameter.ParameterType))
-                    {
-                        config.KnownTypes.Add(method.Parameter.ParameterType);
-                    }
-                    if (!config.KnownTypes.Contains(method.ReturnType))
-                    {
-                        config.KnownTypes.Add(method.ReturnType);
-                    }
-                }
-            }
-
-            Ceras.CerasSerializer serializer = new Ceras.CerasSerializer(config);
-            Codec codec = new Codec(serializer);
-            return codec;
         }
 
         protected override void OnServerFaulted(Exception exception)
