@@ -76,7 +76,7 @@ namespace KupaRPC
         private byte[] _readBuffer = new byte[RequestHeadSize];
         private byte[] _writeBuffer = new byte[RequestHeadSize + 128];
 
-        public bool TryReadRequest(in ReadOnlySequence<byte> buffer, ref RequestHead head)
+        public bool TryReadRequestHead(in ReadOnlySequence<byte> buffer, ref RequestHead head)
         {
             if (buffer.Length < RequestHeadSize)
             {
