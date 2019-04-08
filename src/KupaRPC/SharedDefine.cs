@@ -82,7 +82,7 @@ namespace KupaRPC
 
         public override void WriteReply(long requestID, Codec codec, object reply, out ReadOnlyMemory<byte> tmpBuffer)
         {
-            codec.WriteReponse(requestID, (TReply)reply, out tmpBuffer);
+            codec.WriteReponse((TReply)reply, requestID, out tmpBuffer);
         }
     }
 

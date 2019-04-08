@@ -17,6 +17,7 @@ namespace KupaRPC
         private bool _finish = false;
         private readonly RegisterHelper _registerHelper = new RegisterHelper();
         private Dictionary<Type, Func<Client, object>> _serviceClientFactories = null;
+        private Func<Protocol> _protocolFactory = null;
         private Protocol _protocol = null;
 
 
@@ -48,6 +49,21 @@ namespace KupaRPC
             }
         }
 
+        public ClientFactory UseProtocol(Func<IEnumerable<ServiceDefine>, Protocol> factory)
+        {
+            lock (_syncObj)
+            {
+                if (_finish)
+                {
+                    throw new Exception($"`{nameof(UseLoggerFactory)}` should be used before `{nameof(Finish)}`");
+                }
+
+                _protocolFactory = () => factory(_registerHelper.ServerDefine.Services.Values);
+
+                return this;
+            }
+        }
+
         public ClientFactory Finish()
         {
             lock (_syncObj)
@@ -55,7 +71,14 @@ namespace KupaRPC
                 _finish = true;
 
                 _serviceClientFactories = Emitter.EmitServiceClients<Client>(_registerHelper.ServerDefine);
-                _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
+                if (_protocolFactory == null)
+                {
+                    _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
+                }
+                else
+                {
+                    _protocol = _protocolFactory();
+                }
 
             }
             return this;

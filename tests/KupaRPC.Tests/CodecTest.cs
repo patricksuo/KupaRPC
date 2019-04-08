@@ -10,7 +10,7 @@ namespace KupaRPC.Tests
 {
     public class CodecTest
     {
-        private readonly Codec _codec = new Codec(new Ceras.CerasSerializer());
+        private readonly Codec _codec = new CerasCodec(new Ceras.CerasSerializer());
 
         [Fact]
         public void TryReadRequestHeadTest()
@@ -22,7 +22,7 @@ namespace KupaRPC.Tests
                 ServiceID = 99,
                 Arg = "hello"
             };
-            _codec.WriteReuqest(request, out ReadOnlyMemory<byte> tmpBuffer);
+            _codec.WriteRequest(request.Arg, request.ID, request.ServiceID, request.MethodID, out ReadOnlyMemory<byte> tmpBuffer);
 
             RequestHead expectedHead = new RequestHead()
             {
@@ -77,15 +77,16 @@ namespace KupaRPC.Tests
         [Fact]
         public void TryReadReponseHeadTest()
         {
+            const long requestID = 10086;
+
+            _codec.WriteReponse("hello", requestID, out ReadOnlyMemory<byte> tmpBuffer);
+
             ReponseHead reponseHead = new ReponseHead()
             {
-                RequestID = 10086,
-                ErrorCode = 0,
-                PayloadSize = 10,
+                RequestID = requestID,
+                ErrorCode = ErrorCode.OK,
+                PayloadSize = tmpBuffer.Length - Protocol.ReponseHeadSize,
             };
-
-            _codec.WriteReponseHead(reponseHead, out ReadOnlyMemory<byte> tmpBuffer);
-
 
             byte[] invalidBuffer1 = tmpBuffer.ToArray();
             BinaryPrimitives.WriteInt32LittleEndian(invalidBuffer1, -1);
@@ -108,19 +109,17 @@ namespace KupaRPC.Tests
             {
                 ReadOnlySequence<byte> sequence = new ReadOnlySequence<byte>(tc.Input);
                 ReponseHead head = new ReponseHead();
-                int errorCode = 0;
 
                 if (tc.Exception)
                 {
                     Assert.ThrowsAny<CodecException>(() =>
                     {
-                        _codec.TryReadReponseHead(sequence, ref head.PayloadSize, ref head.RequestID, ref errorCode);
+                        _codec.TryReadReponseHead(sequence, ref head);
                     });
                 }
                 else
                 {
-                    bool ok = _codec.TryReadReponseHead(sequence, ref head.PayloadSize, ref head.RequestID, ref errorCode);
-                    head.ErrorCode = (ErrorCode)errorCode;
+                    bool ok = _codec.TryReadReponseHead(sequence, ref head);
 
                     Assert.Equal(tc.OK, ok);
                     if (ok)
@@ -142,7 +141,7 @@ namespace KupaRPC.Tests
                 ServiceID = 99,
                 Arg = "hello"
             };
-            _codec.WriteReuqest(request, out ReadOnlyMemory<byte> tmpBuffer);
+            _codec.WriteRequest(request.Arg, request.ID, request.ServiceID, request.MethodID, out ReadOnlyMemory<byte> tmpBuffer);
 
             ReadOnlySequence<byte> packet = new ReadOnlySequence<byte>(tmpBuffer.ToArray());
 
@@ -164,14 +163,12 @@ namespace KupaRPC.Tests
         {
             string reponsePayload = "hello";
             long requestID = 1000;
-            _codec.WriteReponse(requestID, reponsePayload, out ReadOnlyMemory<byte> tmpBuffer);
+            _codec.WriteReponse(reponsePayload, requestID, out ReadOnlyMemory<byte> tmpBuffer);
 
             ReadOnlySequence<byte> packet = new ReadOnlySequence<byte>(tmpBuffer.ToArray());
 
             ReponseHead head = new ReponseHead();
-            int errorCode = 0;
-            Assert.True(_codec.TryReadReponseHead(packet, ref head.PayloadSize, ref head.RequestID, ref errorCode));
-            head.ErrorCode = (ErrorCode)errorCode;
+            Assert.True(_codec.TryReadReponseHead(packet, ref head));
 
             Assert.Equal(packet.Length - Protocol.ReponseHeadSize, head.PayloadSize);
             Assert.Equal(requestID, head.RequestID);

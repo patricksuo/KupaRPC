@@ -11,8 +11,8 @@ namespace KupaRPC
 
     public class ServerException : Exception
     {
-        public readonly int ErrorCode;
-        public ServerException(int code):base()
+        public readonly ErrorCode ErrorCode;
+        public ServerException(ErrorCode code):base()
         {
             ErrorCode = code;
         }
