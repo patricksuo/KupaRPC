@@ -23,15 +23,15 @@ namespace KupaRPC
             SerializerConfig config = new SerializerConfig();
             foreach (ServiceDefine service in _serviceDefines)
             {
-                foreach (MethodDefine method in service.Methods.Values)
+                foreach (MethodDefine method in service.Methods)
                 {
-                    if (!config.KnownTypes.Contains(method.Parameter.ParameterType))
+                    if (!config.KnownTypes.Contains(method.RpcParamType))
                     {
-                        config.KnownTypes.Add(method.Parameter.ParameterType);
+                        config.KnownTypes.Add(method.RpcParamType);
                     }
-                    if (!config.KnownTypes.Contains(method.ReturnType))
+                    if (!config.KnownTypes.Contains(method.RpcReturnType))
                     {
-                        config.KnownTypes.Add(method.ReturnType);
+                        config.KnownTypes.Add(method.RpcReturnType);
                     }
                 }
             }

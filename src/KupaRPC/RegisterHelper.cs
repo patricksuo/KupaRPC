@@ -14,23 +14,25 @@ namespace KupaRPC
 
     public class ServerDefine
     {
-        public Dictionary<ushort, ServiceDefine> Services = new Dictionary<ushort, ServiceDefine>();
+        internal Dictionary<ushort, ServiceDefine> _serviceDict = new Dictionary<ushort, ServiceDefine>();
+        public IEnumerable<ServiceDefine> Services => _serviceDict.Values;
     }
 
     public class ServiceDefine
     {
-        public ushort ID;
-        public Type Type;
-        public Dictionary<ushort, MethodDefine> Methods = new Dictionary<ushort, MethodDefine>();
+        public ushort ID { get; internal set; }
+        public Type Type { get; internal set; }
+        internal Dictionary<ushort, MethodDefine> _methodDict = new Dictionary<ushort, MethodDefine>();
+        public IEnumerable<MethodDefine> Methods => _methodDict.Values;
     }
 
     public class MethodDefine
     {
-        public ushort ID;
-        public string Name;
-        public MethodInfo MethodInfo;
-        public ParameterInfo Parameter;
-        public Type ReturnType;
+        public ushort ID { get; internal set; }
+        public string Name { get; internal set; }
+        internal MethodInfo _methodInfo;
+        public Type RpcParamType { get; internal set; }
+        public Type RpcReturnType { get; internal set; }
     }
 
     internal class RegisterHelper
@@ -63,14 +65,14 @@ namespace KupaRPC
 
             service.ID = attribute.ServiceID;
 
-            if (ServerDefine.Services.TryGetValue(service.ID, out ServiceDefine conflictedService))
+            if (ServerDefine._serviceDict.TryGetValue(service.ID, out ServiceDefine conflictedService))
             {
                 throw new ArgumentException($"{serviceType.ToString()} has conflicted ID({service.ID}) with {conflictedService.Type.ToString()}");
             }
 
             CollectMethods(service);
 
-            ServerDefine.Services.Add(service.ID, service);
+            ServerDefine._serviceDict.Add(service.ID, service);
 
             return service;
         }
@@ -87,7 +89,7 @@ namespace KupaRPC
 
                 ushort methodID = attribute.MethodID;
 
-                if (service.Methods.TryGetValue(methodID, out MethodDefine conflictedMethod))
+                if (service._methodDict.TryGetValue(methodID, out MethodDefine conflictedMethod))
                 {
                     throw new ArgumentException($"in {service.Type.Name} method {mi.Name} have conficted method ID({methodID}) with {conflictedMethod.Name}");
                 }
@@ -130,14 +132,14 @@ namespace KupaRPC
                 {
                     ID = methodID,
                     Name = mi.Name,
-                    MethodInfo = mi,
-                    Parameter = pi,
-                    ReturnType = returnType,
+                    _methodInfo = mi,
+                    RpcParamType = pi.ParameterType,
+                    RpcReturnType = returnType,
                 };
-                service.Methods.Add(methodID, methodDefine);
+                service._methodDict.Add(methodID, methodDefine);
             }
 
-            if (service.Methods.Count == 0)
+            if (service._methodDict.Count == 0)
             {
                 throw new ArgumentException($"{service.Type.Name} does not have any method");
             }

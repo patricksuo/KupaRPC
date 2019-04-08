@@ -58,7 +58,7 @@ namespace KupaRPC
                     throw new Exception($"`{nameof(UseLoggerFactory)}` should be used before `{nameof(Finish)}`");
                 }
 
-                _protocolFactory = () => factory(_registerHelper.ServerDefine.Services.Values);
+                _protocolFactory = () => factory(_registerHelper.ServerDefine.Services);
 
                 return this;
             }
@@ -73,7 +73,7 @@ namespace KupaRPC
                 _serviceClientFactories = Emitter.EmitServiceClients<Client>(_registerHelper.ServerDefine);
                 if (_protocolFactory == null)
                 {
-                    _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
+                    _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services);
                 }
                 else
                 {
