@@ -53,7 +53,7 @@ namespace KupaRPC
                 request.ID = _nextRequestID;
                 _nextRequestID++;
 
-                _codec.WriteReuqest(request, out ReadOnlyMemory<byte> tmpBuffer);
+                _codec.WriteRequest(request.Arg, request.ID, request.ServiceID, request.MethodID, out ReadOnlyMemory<byte> tmpBuffer);
                 await _conn.Output.WriteAsync(tmpBuffer);
                 _pendingRequests.Add(request.ID, request);
             }
@@ -99,9 +99,7 @@ namespace KupaRPC
         private async Task ReceiveLoop()
         {
             PipeReader input = _conn.Input;
-            int bodySize = 0;
-            long requestID = 0;
-            int errorCode = 0;
+            ReponseHead head = new ReponseHead();
 
             try
             {
@@ -114,27 +112,27 @@ namespace KupaRPC
                     }
                     ReadOnlySequence<byte> buffer = result.Buffer;
 
-                    if (!_codec.TryReadReponseHead(in buffer, ref bodySize, ref requestID, ref errorCode))
+                    if (!_codec.TryReadReponseHead(in buffer, ref head))
                     {
                         input.AdvanceTo(buffer.Start, buffer.End);
                         continue;
                     }
 
-                    ReadOnlySequence<byte> body = buffer.Slice(Protocol.ReponseHeadSize, bodySize);
+                    ReadOnlySequence<byte> body = buffer.Slice(Protocol.ReponseHeadSize, head.PayloadSize);
 
-                    if (!_pendingRequests.TryRemove(requestID, out IPendingRequest request))
+                    if (!_pendingRequests.TryRemove(head.RequestID, out IPendingRequest request))
                     {
                         input.AdvanceTo(body.End);
                         continue;
                     }
 
-                    if (errorCode == 0)
+                    if (head.ErrorCode ==  ErrorCode.OK)
                     {
                         request.OnResult(_codec, in body);
                     }
                     else
                     {
-                        request.OnError(new ServerException(errorCode));
+                        request.OnError(new ServerException(head.ErrorCode));
                     }
 
                     input.AdvanceTo(body.End);

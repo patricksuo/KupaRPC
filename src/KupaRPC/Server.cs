@@ -19,6 +19,7 @@ namespace KupaRPC
         private readonly TaskCompletionSource<bool> _serveComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly RegisterHelper _registerHelper = new RegisterHelper();
         private readonly Dictionary<uint, Handler> _handlers = new Dictionary<uint, Handler>();
+        private Func<Protocol> _protocolFactory;
         private Protocol _protocol;
 
         public Server(ILoggerFactory loggerFactory = null)
@@ -44,9 +45,21 @@ namespace KupaRPC
             }
         }
 
+        public void UseProtocol(Func<IEnumerable<ServiceDefine>, Protocol> factory)
+        {
+            _protocolFactory = () => factory(_registerHelper.ServerDefine.Services.Values);
+        }
+
         public async Task ServeAsync(string host, int port)
         {
-            _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
+            if (_protocolFactory == null)
+            {
+                _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
+            }
+            else
+            {
+                _protocol = _protocolFactory();
+            }
 
             IPAddress[] addresses = await Dns.GetHostAddressesAsync(host);
             foreach (IPAddress address in addresses)

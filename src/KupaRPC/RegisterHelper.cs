@@ -12,19 +12,19 @@ using System.Runtime.CompilerServices;
 namespace KupaRPC
 {
 
-    internal class ServerDefine
+    public class ServerDefine
     {
         public Dictionary<ushort, ServiceDefine> Services = new Dictionary<ushort, ServiceDefine>();
     }
 
-    internal class ServiceDefine
+    public class ServiceDefine
     {
         public ushort ID;
         public Type Type;
         public Dictionary<ushort, MethodDefine> Methods = new Dictionary<ushort, MethodDefine>();
     }
 
-    internal class MethodDefine
+    public class MethodDefine
     {
         public ushort ID;
         public string Name;

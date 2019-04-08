@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
 using Ceras;
@@ -41,38 +42,17 @@ namespace KupaRPC
         public abstract Codec NewCodec();
     }
 
-    public class CerasProtocol : Protocol
+    public abstract class Codec
     {
-        private readonly IEnumerable<ServiceDefine> _serviceDefines;
+        public abstract bool TryReadRequestHead(in ReadOnlySequence<byte> buffer, ref RequestHead head);
 
-        internal CerasProtocol(IEnumerable<ServiceDefine> serviceDefines)
-        {
-            _serviceDefines = serviceDefines;
-        }
+        public abstract bool TryReadReponseHead(in ReadOnlySequence<byte> buffer, ref ReponseHead head);
 
-        public override Codec NewCodec()
-        {
-            SerializerConfig config = new SerializerConfig();
-            foreach (ServiceDefine service in _serviceDefines)
-            {
-                foreach (MethodDefine method in service.Methods.Values)
-                {
-                    if (!config.KnownTypes.Contains(method.Parameter.ParameterType))
-                    {
-                        config.KnownTypes.Add(method.Parameter.ParameterType);
-                    }
-                    if (!config.KnownTypes.Contains(method.ReturnType))
-                    {
-                        config.KnownTypes.Add(method.ReturnType);
-                    }
-                }
-            }
+        public abstract T ReadBody<T>(in ReadOnlySequence<byte> body);
 
-            CerasSerializer serializer = new CerasSerializer(config);
-            Codec codec = new Codec(serializer);
-            return codec;
-        }
+        public abstract void WriteRequest<T>(T body, long requestID, ushort serviceID, ushort methodID, out ReadOnlyMemory<byte> tmpBuffer);
 
-
+        public abstract void WriteReponse<T>(T body, long requestID, out ReadOnlyMemory<byte> tmpBuffer);
+        public abstract void WriteErrorReponse(ErrorCode errorCode, long requestID, out ReadOnlyMemory<byte> tmpBuffer);
     }
 }

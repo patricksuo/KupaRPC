@@ -97,15 +97,10 @@ namespace KupaRPC
 
         private async Task SendErrorHead(long requestID, ErrorCode errorCode)
         {
-            ReponseHead reponseHeader = new ReponseHead()
-            {
-                RequestID = requestID,
-                ErrorCode = errorCode,
-            };
             await _sendMutex.WaitAsync();
             try
             {
-                _codec.WriteReponseHead(in reponseHeader, out ReadOnlyMemory<byte> reponseBuffer);
+                _codec.WriteErrorReponse(errorCode, requestID, out ReadOnlyMemory<byte> reponseBuffer);
                 await _output.WriteAsync(reponseBuffer);
             }
             finally

@@ -9,11 +9,44 @@ using Ceras;
 
 namespace KupaRPC
 {
-    public class Codec
+    public class CerasProtocol : Protocol
+    {
+        private readonly IEnumerable<ServiceDefine> _serviceDefines;
+
+        internal CerasProtocol(IEnumerable<ServiceDefine> serviceDefines)
+        {
+            _serviceDefines = serviceDefines;
+        }
+
+        public override Codec NewCodec()
+        {
+            SerializerConfig config = new SerializerConfig();
+            foreach (ServiceDefine service in _serviceDefines)
+            {
+                foreach (MethodDefine method in service.Methods.Values)
+                {
+                    if (!config.KnownTypes.Contains(method.Parameter.ParameterType))
+                    {
+                        config.KnownTypes.Add(method.Parameter.ParameterType);
+                    }
+                    if (!config.KnownTypes.Contains(method.ReturnType))
+                    {
+                        config.KnownTypes.Add(method.ReturnType);
+                    }
+                }
+            }
+
+            CerasSerializer serializer = new CerasSerializer(config);
+            Codec codec = new CerasCodec(serializer);
+            return codec;
+        }
+    }
+
+    public class CerasCodec : Codec
     {
         private readonly CerasSerializer _serializer;
 
-        public Codec(CerasSerializer serializer)
+        public CerasCodec(CerasSerializer serializer)
         {
             _serializer = serializer;
         }
@@ -22,7 +55,7 @@ namespace KupaRPC
         private byte[] _readBuffer = new byte[Protocol.RequestHeadSize];
         private byte[] _writeBuffer = new byte[Protocol.RequestHeadSize + 128];
 
-        public bool TryReadRequestHead(in ReadOnlySequence<byte> buffer, ref RequestHead head)
+        public override bool TryReadRequestHead(in ReadOnlySequence<byte> buffer, ref RequestHead head)
         {
             if (buffer.Length < Protocol.RequestHeadSize)
             {
@@ -49,7 +82,7 @@ namespace KupaRPC
             return true;
         }
 
-        public bool TryReadReponseHead(in ReadOnlySequence<byte> buffer, ref int payloadSize, ref long requestID, ref int errorCode)
+        public override bool TryReadReponseHead(in ReadOnlySequence<byte> buffer, ref ReponseHead head)
         {
             if (buffer.Length < Protocol.ReponseHeadSize)
             {
@@ -60,22 +93,22 @@ namespace KupaRPC
             buffer.Slice(0, Protocol.ReponseHeadSize).CopyTo(_readBuffer);
 
             ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(_readBuffer);
-            payloadSize = BinaryPrimitives.ReadInt32LittleEndian(span);
-            if (payloadSize < 0 || payloadSize > Protocol.MaxPayloadSize)
+            head.PayloadSize = BinaryPrimitives.ReadInt32LittleEndian(span);
+            if (head.PayloadSize < 0 || head.PayloadSize > Protocol.MaxPayloadSize)
             {
                 ThrowHelper.ThrowInvalidBodySizeException();
             }
             span = span.Slice(sizeof(int));
 
-            requestID = BinaryPrimitives.ReadInt64LittleEndian(span);
+            head.RequestID = BinaryPrimitives.ReadInt64LittleEndian(span);
             span = span.Slice(sizeof(long));
 
-            errorCode = BinaryPrimitives.ReadInt32LittleEndian(span);
+            head.ErrorCode = (ErrorCode)BinaryPrimitives.ReadInt32LittleEndian(span);
 
             return true;
         }
 
-        public T ReadBody<T>(in ReadOnlySequence<byte> body)
+        public override T ReadBody<T>(in ReadOnlySequence<byte> body)
         {
             if (body.IsSingleSegment && MemoryMarshal.TryGetArray(body.First, out ArraySegment<byte> segment))
             {
@@ -97,29 +130,6 @@ namespace KupaRPC
             return val;
         }
 
-        public void WriteReuqest<TArg, TReply>(Request<TArg, TReply> request, out ReadOnlyMemory<byte> tmpBuffer)
-        {
-            // write body
-            int size = _serializer.Serialize(request.Arg, ref _writeBuffer, Protocol.RequestHeadSize);
-            if (size < 0 || size > Protocol.MaxPayloadSize)
-            {
-                ThrowHelper.ThrowInvalidBodySizeException();
-            }
-
-            Span<byte> span = _writeBuffer;
-            BinaryPrimitives.WriteInt32LittleEndian(span, size);
-            span = span.Slice(sizeof(int));
-
-            BinaryPrimitives.WriteInt64LittleEndian(span, request.ID);
-            span = span.Slice(sizeof(long));
-
-            BinaryPrimitives.WriteUInt16LittleEndian(span, request.ServiceID);
-            span = span.Slice(sizeof(ushort));
-
-            BinaryPrimitives.WriteUInt16LittleEndian(span, request.MethodID);
-
-            tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, Protocol.RequestHeadSize + size);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void WriteReponseHead(int payloadSize, long requestID, ErrorCode errorCode)
@@ -134,15 +144,34 @@ namespace KupaRPC
             BinaryPrimitives.WriteInt32LittleEndian(span, (int)errorCode);
         }
 
-        public void WriteReponseHead(in ReponseHead head, out ReadOnlyMemory<byte> tmpBuffer)
+
+        public override void WriteRequest<T>(T arg, long requestID, ushort serviceID, ushort methodID, out ReadOnlyMemory<byte> tmpBuffer)
         {
-            WriteReponseHead(head.PayloadSize, head.RequestID, head.ErrorCode);
-            tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, Protocol.ReponseHeadSize);
+            // write body
+            int size = _serializer.Serialize(arg, ref _writeBuffer, Protocol.RequestHeadSize);
+            if (size < 0 || size > Protocol.MaxPayloadSize)
+            {
+                ThrowHelper.ThrowInvalidBodySizeException();
+            }
+
+            Span<byte> span = _writeBuffer;
+            BinaryPrimitives.WriteInt32LittleEndian(span, size);
+            span = span.Slice(sizeof(int));
+
+            BinaryPrimitives.WriteInt64LittleEndian(span, requestID);
+            span = span.Slice(sizeof(long));
+
+            BinaryPrimitives.WriteUInt16LittleEndian(span, serviceID);
+            span = span.Slice(sizeof(ushort));
+
+            BinaryPrimitives.WriteUInt16LittleEndian(span, methodID);
+
+            tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, Protocol.RequestHeadSize + size);
         }
 
-        public void WriteReponse<T>(long requestID, T reponse, out ReadOnlyMemory<byte> tmpBuffer)
+        public override void WriteReponse<T>(T body, long requestID, out ReadOnlyMemory<byte> tmpBuffer)
         {
-            int size = _serializer.Serialize(reponse, ref _writeBuffer, Protocol.ReponseHeadSize);
+            int size = _serializer.Serialize(body, ref _writeBuffer, Protocol.ReponseHeadSize);
 
             if (size < 0 || size > Protocol.MaxPayloadSize)
             {
@@ -152,6 +181,12 @@ namespace KupaRPC
             WriteReponseHead(size, requestID, ErrorCode.OK);
 
             tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, size + Protocol.ReponseHeadSize);
+        }
+
+        public override void WriteErrorReponse(ErrorCode errorCode, long requestID, out ReadOnlyMemory<byte> tmpBuffer)
+        {
+            WriteReponseHead(0, requestID, errorCode);
+            tmpBuffer = new ReadOnlyMemory<byte>(_writeBuffer, 0, Protocol.ReponseHeadSize);
         }
     }
 }
