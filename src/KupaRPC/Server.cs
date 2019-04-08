@@ -36,10 +36,10 @@ namespace KupaRPC
         {
             ServiceDefine serviceDefine = _registerHelper.AddService(typeof(T));
 
-            foreach (MethodDefine methodDefine in serviceDefine.Methods.Values)
+            foreach (MethodDefine methodDefine in serviceDefine.Methods)
             {
                 string name = $"{serviceDefine.Type.Name}.{methodDefine.Name}";
-                Handler handler = Emitter.EmmitHandler(name, methodDefine.MethodInfo, service);
+                Handler handler = Emitter.EmmitHandler(name, methodDefine._methodInfo, service);
                 uint key = HandlerKey(serviceDefine.ID, methodDefine.ID);
                 _handlers.Add(key, handler);
             }
@@ -47,14 +47,14 @@ namespace KupaRPC
 
         public void UseProtocol(Func<IEnumerable<ServiceDefine>, Protocol> factory)
         {
-            _protocolFactory = () => factory(_registerHelper.ServerDefine.Services.Values);
+            _protocolFactory = () => factory(_registerHelper.ServerDefine.Services);
         }
 
         public async Task ServeAsync(string host, int port)
         {
             if (_protocolFactory == null)
             {
-                _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services.Values);
+                _protocol = new CerasProtocol(_registerHelper.ServerDefine.Services);
             }
             else
             {

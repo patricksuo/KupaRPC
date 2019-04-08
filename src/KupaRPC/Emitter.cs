@@ -54,7 +54,7 @@ namespace KupaRPC
             AssemblyBuilder ab = AssemblyBuilder.DefineDynamicAssembly(name, AssemblyBuilderAccess.Run);
             ModuleBuilder mb = ab.DefineDynamicModule(s_moduleName);
 
-            foreach (ServiceDefine service in serverDefine.Services.Values)
+            foreach (ServiceDefine service in serverDefine.Services)
             {
                 Type implType = EmitServiceClient<TClient>(mb, service);
                 service2Impl.Add(service.Type, implType);
@@ -86,7 +86,7 @@ namespace KupaRPC
             // ctor
             // public XXXX(TClient client)
             ConstructorBuilder ctorBuilder = builder.DefineConstructor(
-                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, 
+                MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
                 CallingConventions.Standard,
                 new Type[] { typeof(TClient) });
 
@@ -100,17 +100,17 @@ namespace KupaRPC
             ctorIL.Emit(OpCodes.Stfld, fbClient);
             ctorIL.Emit(OpCodes.Ret);
 
-            foreach (MethodDefine method in serviceDef.Methods.Values)
+            foreach (MethodDefine method in serviceDef.Methods)
             {
-                Type[] paramsType = method.MethodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
+                Type[] paramsType = method._methodInfo.GetParameters().Select(p => p.ParameterType).ToArray();
                 MethodBuilder mb = builder.DefineMethod(method.Name,
                     MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.NewSlot | MethodAttributes.Virtual | MethodAttributes.HideBySig,
-                    method.MethodInfo.ReturnType,
+                    method._methodInfo.ReturnType,
                     paramsType);
 
 
 
-                Type requestType = typeof(Request<,>).MakeGenericType(method.Parameter.ParameterType, method.ReturnType);
+                Type requestType = typeof(Request<,>).MakeGenericType(method.RpcParamType, method.RpcReturnType);
                 ConstructorInfo requestCtor = requestType.GetConstructor(Array.Empty<Type>());
                 ILGenerator methIL = mb.GetILGenerator();
 
@@ -145,7 +145,7 @@ namespace KupaRPC
                 methIL.Emit(OpCodes.Ldloc_0);
                 methIL.Emit(OpCodes.Ldarg_2);
                 methIL.Emit(OpCodes.Call,
-                    typeof(TClient).GetMethod("Send").MakeGenericMethod(method.Parameter.ParameterType, method.ReturnType));
+                    typeof(TClient).GetMethod("Send").MakeGenericMethod(method.RpcParamType, method.RpcReturnType));
                 //methIL.Emit(OpCodes.Call, typeof(TClient).GetMethod("Blabla"));
                 methIL.Emit(OpCodes.Ret);
             }
